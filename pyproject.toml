@@ -1,0 +1,7 @@
+[project]
+name = "dnd-world-builder-discord-bot"
+version = "0.1.0"
+description = "A Discord Bot for Logging World Building Related Events in a DnD Campaign"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []

@@ -1,0 +1,6 @@
+.venv/
+.env
+*.log
+*.db
+bin/
+dist/
