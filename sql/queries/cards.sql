@@ -8,6 +8,11 @@ SELECT *
 FROM lore_cards 
 WHERE LOWER(name) = LOWER($1);
 
+-- name: ListCards :many
+SELECT *
+FROM lore_cards
+ORDER BY name;
+
 -- name: ListCardsByType :many
 SELECT *
 FROM lore_cards
@@ -19,7 +24,8 @@ UPDATE lore_cards
 SET 
     summary = $2,
     body = $3,
-    image_url = $4,
+    tags = $4,
+    image_url = $5,
     updated_at = NOW()
 WHERE id = $1
 RETURNING *;

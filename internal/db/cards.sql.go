@@ -91,6 +91,42 @@ func (q *Queries) GetCardByName(ctx context.Context, lower string) (LoreCard, er
 	return i, err
 }
 
+const listCards = `-- name: ListCards :many
+SELECT id, name, type, summary, body, image_url, tags, created_at, updated_at
+FROM lore_cards
+ORDER BY name
+`
+
+func (q *Queries) ListCards(ctx context.Context) ([]LoreCard, error) {
+	rows, err := q.db.Query(ctx, listCards)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []LoreCard{}
+	for rows.Next() {
+		var i LoreCard
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Type,
+			&i.Summary,
+			&i.Body,
+			&i.ImageUrl,
+			&i.Tags,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listCardsByType = `-- name: ListCardsByType :many
 SELECT id, name, type, summary, body, image_url, tags, created_at, updated_at
 FROM lore_cards
@@ -167,17 +203,19 @@ UPDATE lore_cards
 SET 
     summary = $2,
     body = $3,
-    image_url = $4,
+    tags = $4,
+    image_url = $5,
     updated_at = NOW()
 WHERE id = $1
 RETURNING id, name, type, summary, body, image_url, tags, created_at, updated_at
 `
 
 type UpdateCardParams struct {
-	ID       int32   `json:"id"`
-	Summary  string  `json:"summary"`
-	Body     *string `json:"body"`
-	ImageUrl *string `json:"image_url"`
+	ID       int32    `json:"id"`
+	Summary  string   `json:"summary"`
+	Body     *string  `json:"body"`
+	Tags     []string `json:"tags"`
+	ImageUrl *string  `json:"image_url"`
 }
 
 func (q *Queries) UpdateCard(ctx context.Context, arg UpdateCardParams) (LoreCard, error) {
@@ -185,6 +223,7 @@ func (q *Queries) UpdateCard(ctx context.Context, arg UpdateCardParams) (LoreCar
 		arg.ID,
 		arg.Summary,
 		arg.Body,
+		arg.Tags,
 		arg.ImageUrl,
 	)
 	var i LoreCard
