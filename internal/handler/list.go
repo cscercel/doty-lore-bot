@@ -16,7 +16,7 @@ func HandleList(
 	i *discordgo.InteractionCreate, 
 	opts []*discordgo.ApplicationCommandInteractionDataOption, q *db.Queries,
 ) {
-	var typeFilter string
+var typeFilter string
 	for _, o := range opts {
 		if o.Name == "type" {
 			typeFilter = o.StringValue()
@@ -29,7 +29,7 @@ func HandleList(
 
 	if typeFilter != "" {
 		cards, err = q.ListCardsByType(context.Background(), typeFilter)
-		title = fmt.Sprintf("%s Cards", typeFilter)
+		title = fmt.Sprintf("%s Cards", strings.Title(typeFilter))
 	} else {
 		cards, err = q.ListCards(context.Background())
 	}
@@ -50,18 +50,24 @@ func HandleList(
 		fmt.Fprintf(&sb, "**%s** — _%s_\n", c.Name, c.Type)
 	}
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Embeds: []*discordgo.MessageEmbed{
-				{
-					Title:       title,
-					Description: sb.String(),
-					Color:       0x8B5CF6,
-				},
-			},
-		},
-	})
+	embed := &discordgo.MessageEmbed{
+		Title:       title,
+		Description: sb.String(),
+		Color:       0x8B5CF6,
+	}
 
-	log.Printf("cards listed: type=%q count=%d by=%s", typeFilter, len(cards), i.Member.User.Username)
+	dmChannel, err := s.UserChannelCreate(i.Member.User.ID)
+	if err != nil {
+		log.Printf("dm channel create error: %v", err)
+		respond(s, i, "Couldn't open a DM — check your privacy settings allow DMs from server members.")
+		return
+	}
+	if _, err := s.ChannelMessageSendEmbed(dmChannel.ID, embed); err != nil {
+		log.Printf("dm send error: %v", err)
+		respond(s, i, "Couldn't send you a DM — check your privacy settings allow DMs from server members.")
+		return
+	}
+
+	respond(s, i, "Sent the card list to your DMs.")
+	log.Printf("cards listed via dm: type=%q count=%d by=%s", typeFilter, len(cards), i.Member.User.Username)
 }

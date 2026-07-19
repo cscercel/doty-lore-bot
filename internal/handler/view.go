@@ -79,14 +79,27 @@ func HandleView(
 			{Name: "Type", Value: card.Type, Inline: true},
 		},
 	}
+	if card.Body != nil && *card.Body != "" {
+		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+			Name: "Details", Value: *card.Body, Inline: false,
+		})
+	}
 	if card.ImageUrl != nil {
 		embed.Image = &discordgo.MessageEmbedImage{URL: *card.ImageUrl}
 	}
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{Embeds: []*discordgo.MessageEmbed{embed}},
-	})
+	dmChannel, err := s.UserChannelCreate(i.Member.User.ID)
+	if err != nil {
+		log.Printf("dm channel create error: %v", err)
+		respond(s, i, "Couldn't open a DM — check your privacy settings allow DMs from server members.")
+		return
+	}
+	if _, err := s.ChannelMessageSendEmbed(dmChannel.ID, embed); err != nil {
+		log.Printf("dm send error: %v", err)
+		respond(s, i, "Couldn't send you a DM — check your privacy settings allow DMs from server members.")
+		return
+	}
 
-	log.Printf("card viewed: name=%q by=%s", card.Name, i.Member.User.Username)
+	respond(s, i, "Sent \""+card.Name+"\" to your DMs.")
+	log.Printf("card viewed via dm: name=%q by=%s", card.Name, i.Member.User.Username)
 }

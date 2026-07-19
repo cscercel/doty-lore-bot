@@ -81,6 +81,7 @@ var commandDefs = []*discordgo.ApplicationCommand{
 							{Name: "Rule", Value: "rule"},
 							{Name: "Religion", Value: "religion"},
 							{Name: "Event", Value: "event"},
+							{Name: "Organization", Value: "organization"},
 						},
 					},
 				},
