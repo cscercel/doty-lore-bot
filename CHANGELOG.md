@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.1.0] - 2026.07.20
+
+### Added
+
+### Changed
+- Users can now change `name` field in the edit modal (bot will check if name already exists in database before submitting)
+- Users can now choose to either `keep`, `change` or `delete` image associated to a card.
+
+### Fixed
+- Fixed a visual bug where some replies from the bot looked like `Card for {name} ** saved` instead of `Card for ** {name} ** saved`
+
 ## [1.0.0] - 2026.07.20
 
 ### Added

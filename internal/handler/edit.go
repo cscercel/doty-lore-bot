@@ -50,6 +50,16 @@ func HandleEditStart(
 			Components: []discordgo.MessageComponent{
 				discordgo.ActionsRow{Components: []discordgo.MessageComponent{
 					discordgo.TextInput{
+						CustomID:  "name",
+						Label:     "Name",
+						Style:     discordgo.TextInputShort,
+						Required:  true,
+						MaxLength: 100,
+						Value:     existing.Name,
+					},
+				}},
+				discordgo.ActionsRow{Components: []discordgo.MessageComponent{
+					discordgo.TextInput{
 						CustomID:  "summary",
 						Label:     "Summary",
 						Style:     discordgo.TextInputShort,
@@ -78,6 +88,17 @@ func HandleEditStart(
 						Value:     tagsVal,
 					},
 				}},
+				discordgo.ActionsRow{Components: []discordgo.MessageComponent{
+					discordgo.TextInput{
+						CustomID:    "image",
+						Label:       "Image: keep / edit / delete",
+						Style:       discordgo.TextInputShort,
+						Required:    true,
+						MaxLength:   10,
+						Value:       "keep",
+						Placeholder: "keep, edit, or delete",
+					},
+				}},
 			},
 		},
 	})
@@ -99,7 +120,7 @@ func HandleEditSubmit(s *discordgo.Session, i *discordgo.InteractionCreate, q *d
 		return
 	}
 
-	var summary string
+	var newName, summary, imageFlag string
 	var body *string
 	var tags []string
 	for _, row := range data.Components {
@@ -112,6 +133,8 @@ func HandleEditSubmit(s *discordgo.Session, i *discordgo.InteractionCreate, q *d
 			continue
 		}
 		switch input.CustomID {
+		case "name":
+			newName = strings.TrimSpace(input.Value)
 		case "summary":
 			summary = input.Value
 		case "body":
@@ -130,15 +153,40 @@ func HandleEditSubmit(s *discordgo.Session, i *discordgo.InteractionCreate, q *d
 					}
 				}
 			}
+		case "image":
+			imageFlag = strings.ToLower(strings.TrimSpace(input.Value))
 		}
 	}
 
-	updated, err := q.UpdateCard(context.Background(), db.UpdateCardParams{
+	if imageFlag != "keep" && imageFlag != "edit" && imageFlag != "delete" {
+		respond(s, i, "Image field must be \"keep\", \"edit\", or \"delete\" — please try again.")
+		return
+	}
+
+	// If the name changed, make sure it's not already taken by another card.
+	if conflict, err := q.GetCardByName(context.Background(), newName); err == nil && conflict.ID != int32(id) {
+		respond(s, i, "A card named \""+newName+"\" already exists — pick a different name.")
+		return
+	} else if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		log.Printf("name conflict check error: %v", err)
+		respond(s, i, "Something went wrong checking that name.")
+		return
+	}
+
+	params := db.UpdateCardParams{
 		ID:      int32(id),
+		Name:    newName,
 		Summary: summary,
 		Body:    body,
 		Tags:    tags,
-	})
+	}
+
+	if imageFlag == "delete" {
+		params.ImageUrl = nil // clears the image
+	}
+	// for "keep" and "edit" we leave ImageUrl untouched here — see note below
+
+	updated, err := q.UpdateCard(context.Background(), params)
 	if err != nil {
 		log.Printf("update card error: %v", err)
 		respond(s, i, "Something went wrong updating that card.")
@@ -146,12 +194,30 @@ func HandleEditSubmit(s *discordgo.Session, i *discordgo.InteractionCreate, q *d
 	}
 	log.Printf("card edited: name=%q by=%s", updated.Name, i.Member.User.Username)
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: updated.Name + "** updated. Reply here with a new image within 60 seconds to update the portrait, or it'll be left as-is.",
-		},
-	})
+	switch imageFlag {
+	case "edit":
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "**" + updated.Name + "** updated. Reply here with a new image within 60 seconds.",
+			},
+		})
+		awaitImageReply(s, i.ChannelID, i.Member.User.ID, updated.ID, q)
 
-	awaitImageReply(s, i.ChannelID, i.Member.User.ID, updated.ID, q)
+	case "delete":
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "**" + updated.Name + "** updated. Image removed.",
+			},
+		})
+
+	default: // "keep"
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "**" + updated.Name + "** updated.",
+			},
+		})
+	}
 }

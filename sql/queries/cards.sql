@@ -22,10 +22,11 @@ ORDER BY name;
 -- name: UpdateCard :one
 UPDATE lore_cards
 SET 
-    summary = $2,
-    body = $3,
-    tags = $4,
-    image_url = $5,
+    name = $2,
+    summary = $3,
+    body = $4,
+    tags = $5,
+    image_url = $6,
     updated_at = NOW()
 WHERE id = $1
 RETURNING *;

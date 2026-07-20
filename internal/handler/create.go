@@ -136,7 +136,7 @@ func HandleCreateSubmit(s *discordgo.Session, i *discordgo.InteractionCreate, q 
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: card.Name + "** created. Reply here with an image within 60 seconds to add a portrait, or it'll be skipped.",
+			Content: "**" + card.Name + "** created. Reply here with an image within 60 seconds to add a portrait, or it'll be skipped.",
 		},
 	})
 

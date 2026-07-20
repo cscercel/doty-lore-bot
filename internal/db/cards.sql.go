@@ -201,10 +201,11 @@ func (q *Queries) SearchCardsByName(ctx context.Context, dollar_1 *string) ([]Se
 const updateCard = `-- name: UpdateCard :one
 UPDATE lore_cards
 SET 
-    summary = $2,
-    body = $3,
-    tags = $4,
-    image_url = $5,
+    name = $2,
+    summary = $3,
+    body = $4,
+    tags = $5,
+    image_url = $6,
     updated_at = NOW()
 WHERE id = $1
 RETURNING id, name, type, summary, body, image_url, tags, created_at, updated_at
@@ -212,6 +213,7 @@ RETURNING id, name, type, summary, body, image_url, tags, created_at, updated_at
 
 type UpdateCardParams struct {
 	ID       int32    `json:"id"`
+	Name     string   `json:"name"`
 	Summary  string   `json:"summary"`
 	Body     *string  `json:"body"`
 	Tags     []string `json:"tags"`
@@ -221,6 +223,7 @@ type UpdateCardParams struct {
 func (q *Queries) UpdateCard(ctx context.Context, arg UpdateCardParams) (LoreCard, error) {
 	row := q.db.QueryRow(ctx, updateCard,
 		arg.ID,
+		arg.Name,
 		arg.Summary,
 		arg.Body,
 		arg.Tags,
