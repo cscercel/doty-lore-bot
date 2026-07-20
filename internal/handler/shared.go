@@ -47,7 +47,7 @@ func awaitImageReply(s *discordgo.Session, channelID, userID string, cardID int3
 				s.ChannelMessageSend(channelID, "Couldn't save that image — try `/lore edit` instead.")
 				return
 			}
-			s.ChannelMessageSend(channelID, "🖼️ Image saved.")
+			s.ChannelMessageSend(channelID, "Image saved.")
 			log.Printf("card image updated: id=%d by=%s", cardID, userID)
 
 		case <-time.After(60 * time.Second):
