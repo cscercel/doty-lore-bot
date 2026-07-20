@@ -13,41 +13,24 @@ var commandDefs = []*discordgo.ApplicationCommand{
 				Description: "Create a new lore card",
 				Options: []*discordgo.ApplicationCommandOption{
 					{
-						Type:        discordgo.ApplicationCommandOptionString,
-						Name:        "name",
+						Type: discordgo.ApplicationCommandOptionString,
+						Name: "name",
 						Description: "Card name",
-						Required:    true,
+						Required: true,
 					},
 					{
-						Type:        discordgo.ApplicationCommandOptionString,
-						Name:        "type",
+						Type: discordgo.ApplicationCommandOptionString,
+						Name: "type",
 						Description: "Card type",
-						Required:    true,
+						Required: true,
 						Choices: []*discordgo.ApplicationCommandOptionChoice{
 							{Name: "Location", Value: "location"},
 							{Name: "NPC", Value: "npc"},
 							{Name: "Rule", Value: "rule"},
 							{Name: "Religion", Value: "religion"},
 							{Name: "Event", Value: "event"},
+							{Name: "Organization", Value: "organization"},
 						},
-					},
-					{
-						Type:        discordgo.ApplicationCommandOptionString,
-						Name:        "summary",
-						Description: "Short description",
-						Required:    true,
-					},
-					{
-						Type:        discordgo.ApplicationCommandOptionString,
-						Name:        "body",
-						Description: "Full lore text (optional, can add later)",
-						Required:    false,
-					},
-					{
-						Type:        discordgo.ApplicationCommandOptionAttachment,
-						Name:        "image",
-						Description: "Portrait or map image",
-						Required:    false,
 					},
 				},
 			},
@@ -57,10 +40,10 @@ var commandDefs = []*discordgo.ApplicationCommand{
 				Description: "View a lore card",
 				Options: []*discordgo.ApplicationCommandOption{
 					{
-						Type:         discordgo.ApplicationCommandOptionString,
-						Name:         "name",
-						Description:  "Card name",
-						Required:     true,
+						Type: discordgo.ApplicationCommandOptionString,
+						Name: "name",
+						Description: "Card name",
+						Required: true,
 						Autocomplete: true,
 					},
 				},
@@ -71,10 +54,10 @@ var commandDefs = []*discordgo.ApplicationCommand{
 				Description: "List lore cards",
 				Options: []*discordgo.ApplicationCommandOption{
 					{
-						Type:        discordgo.ApplicationCommandOptionString,
-						Name:        "type",
+						Type: discordgo.ApplicationCommandOptionString,
+						Name: "type",
 						Description: "Filter by card type",
-						Required:    false,
+						Required: false,
 						Choices: []*discordgo.ApplicationCommandOptionChoice{
 							{Name: "Location", Value: "location"},
 							{Name: "NPC", Value: "npc"},
@@ -92,35 +75,11 @@ var commandDefs = []*discordgo.ApplicationCommand{
 				Description: "Edit an existing lore card",
 				Options: []*discordgo.ApplicationCommandOption{
 					{
-						Type:         discordgo.ApplicationCommandOptionString,
-						Name:         "name",
-						Description:  "Card to edit",
-						Required:     true,
+						Type: discordgo.ApplicationCommandOptionString,
+						Name: "name",
+						Description: "Card to edit",
+						Required: true,
 						Autocomplete: true,
-					},
-					{
-						Type:        discordgo.ApplicationCommandOptionString,
-						Name:        "summary",
-						Description: "New summary (leave blank to keep current)",
-						Required:    false,
-					},
-					{
-						Type:        discordgo.ApplicationCommandOptionString,
-						Name:        "body",
-						Description: "New full lore text (leave blank to keep current)",
-						Required:    false,
-					},
-					{
-						Type:        discordgo.ApplicationCommandOptionString,
-						Name:        "tags",
-						Description: "Comma-separated tags (leave blank to keep current)",
-						Required:    false,
-					},
-					{
-						Type:        discordgo.ApplicationCommandOptionAttachment,
-						Name:        "image",
-						Description: "New image (leave blank to keep current)",
-						Required:    false,
 					},
 				},
 			},
@@ -130,10 +89,10 @@ var commandDefs = []*discordgo.ApplicationCommand{
 				Description: "Delete a lore card",
 				Options: []*discordgo.ApplicationCommandOption{
 					{
-						Type:         discordgo.ApplicationCommandOptionString,
-						Name:         "name",
-						Description:  "Card to delete",
-						Required:     true,
+						Type: discordgo.ApplicationCommandOptionString,
+						Name: "name",
+						Description: "Card to delete",
+						Required: true,
 						Autocomplete: true,
 					},
 				},
@@ -147,5 +106,5 @@ func RegisterCommands(s *discordgo.Session, guildID string) ([]*discordgo.Applic
 }
 
 func CleanupCommands(s *discordgo.Session, guildID string, cmds []*discordgo.ApplicationCommand) {
-	// TODO
+	//TODO
 }

@@ -240,3 +240,34 @@ func (q *Queries) UpdateCard(ctx context.Context, arg UpdateCardParams) (LoreCar
 	)
 	return i, err
 }
+
+const updateCardImage = `-- name: UpdateCardImage :one
+UPDATE lore_cards
+SET 
+    image_url = $2,
+    updated_at = NOW()
+WHERE id = $1
+RETURNING id, name, type, summary, body, image_url, tags, created_at, updated_at
+`
+
+type UpdateCardImageParams struct {
+	ID       int32   `json:"id"`
+	ImageUrl *string `json:"image_url"`
+}
+
+func (q *Queries) UpdateCardImage(ctx context.Context, arg UpdateCardImageParams) (LoreCard, error) {
+	row := q.db.QueryRow(ctx, updateCardImage, arg.ID, arg.ImageUrl)
+	var i LoreCard
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Type,
+		&i.Summary,
+		&i.Body,
+		&i.ImageUrl,
+		&i.Tags,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}

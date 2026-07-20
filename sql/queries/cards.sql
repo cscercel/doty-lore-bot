@@ -30,6 +30,14 @@ SET
 WHERE id = $1
 RETURNING *;
 
+-- name: UpdateCardImage :one
+UPDATE lore_cards
+SET 
+    image_url = $2,
+    updated_at = NOW()
+WHERE id = $1
+RETURNING *;
+
 -- name: SearchCardsByName :many
 SELECT id, name, type
 FROM lore_cards

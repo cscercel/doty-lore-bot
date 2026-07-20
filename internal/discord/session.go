@@ -1,9 +1,12 @@
 package discord
 
 import (
+	"strings"
+
 	"github.com/bwmarrin/discordgo"
-	"github.com/cscercel/doty-lore-bot/internal/handler"
+
 	"github.com/cscercel/doty-lore-bot/internal/db"
+	"github.com/cscercel/doty-lore-bot/internal/handler"
 )
 
 func RegisterHandlers(s *discordgo.Session, q *db.Queries) {
@@ -17,13 +20,13 @@ func RegisterHandlers(s *discordgo.Session, q *db.Queries) {
 			sub := data.Options[0]
 			switch sub.Name {
 			case "create":
-				handler.HandleCreate(s, i, sub.Options, q)
+				handler.HandleCreateStart(s, i, sub.Options, q)
 			case "view":
 				handler.HandleView(s, i, sub.Options, q)
 			case "list":
 				handler.HandleList(s, i, sub.Options, q)
 			case "edit":
-				handler.HandleEdit(s, i, sub.Options, q)
+				handler.HandleEditStart(s, i, sub.Options, q)
 			case "delete":
 				handler.HandleDelete(s, i, sub.Options, q)
 			}
@@ -36,6 +39,15 @@ func RegisterHandlers(s *discordgo.Session, q *db.Queries) {
 			sub := data.Options[0]
 			if sub.Name == "view" || sub.Name == "edit" || sub.Name == "delete" {
 				handler.HandleViewAutocomplete(s, i, sub.Options, q)
+			}
+
+		case discordgo.InteractionModalSubmit:
+			customID := i.ModalSubmitData().CustomID
+			switch {
+			case strings.HasPrefix(customID, "lore_create_modal:"):
+				handler.HandleCreateSubmit(s, i, q)
+			case strings.HasPrefix(customID, "lore_edit_modal:"):
+				handler.HandleEditSubmit(s, i, q)
 			}
 		}
 	})

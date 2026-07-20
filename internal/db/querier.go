@@ -17,6 +17,7 @@ type Querier interface {
 	ListCardsByType(ctx context.Context, type_ string) ([]LoreCard, error)
 	SearchCardsByName(ctx context.Context, dollar_1 *string) ([]SearchCardsByNameRow, error)
 	UpdateCard(ctx context.Context, arg UpdateCardParams) (LoreCard, error)
+	UpdateCardImage(ctx context.Context, arg UpdateCardImageParams) (LoreCard, error)
 }
 
 var _ Querier = (*Queries)(nil)
