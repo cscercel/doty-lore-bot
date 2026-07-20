@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/cscercel/doty-lore-bot/internal/db"
 )
@@ -29,7 +31,7 @@ var typeFilter string
 
 	if typeFilter != "" {
 		cards, err = q.ListCardsByType(context.Background(), typeFilter)
-		title = fmt.Sprintf("%s Cards", strings.Title(typeFilter))
+		title = fmt.Sprintf("%s Cards", cases.Title(language.AmericanEnglish).String(typeFilter))
 	} else {
 		cards, err = q.ListCards(context.Background())
 	}
