@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.2.0] - 2026.08.16
+
+### Added
+
+### Changed
+- Database was changed from Supabase (Postgresql) -> Turso (libsql/sqlite)
+- Removed docker-compose since database server no longer required for dev work
+- Using database/sql instead of another dep for db connection
+
+### Fixed
+
 ## [1.1.1] - 2026.07.24
 
 ### Added
