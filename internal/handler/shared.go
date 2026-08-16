@@ -7,7 +7,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
-	"github.com/cscercel/doty-lore-bot/internal/db"
+	"github.com/cscercel/doty-lore-bot/internal/database"
 )
 
 func respond(s *discordgo.Session, i *discordgo.InteractionCreate, msg string) {
@@ -20,7 +20,7 @@ func respond(s *discordgo.Session, i *discordgo.InteractionCreate, msg string) {
 	})
 }
 
-func awaitImageReply(s *discordgo.Session, channelID, userID string, cardID int32, q *db.Queries) {
+func awaitImageReply(s *discordgo.Session, channelID, userID string, cardID int64, q *database.Queries) {
 	done := make(chan *discordgo.MessageCreate, 1)
 
 	removeHandler := s.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -38,7 +38,7 @@ func awaitImageReply(s *discordgo.Session, channelID, userID string, cardID int3
 		select {
 		case m := <-done:
 			url := m.Attachments[0].URL
-			_, err := q.UpdateCardImage(context.Background(), db.UpdateCardImageParams{
+			_, err := q.UpdateCardImage(context.Background(), database.UpdateCardImageParams{
 				ID:       cardID,
 				ImageUrl: &url,
 			})

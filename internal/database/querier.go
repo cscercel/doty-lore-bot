@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.30.0
 
-package db
+package database
 
 import (
 	"context"
@@ -10,9 +10,9 @@ import (
 
 type Querier interface {
 	CreateCard(ctx context.Context, arg CreateCardParams) (LoreCard, error)
-	DeleteCard(ctx context.Context, id int32) error
-	DeleteCardByName(ctx context.Context, lower string) error
-	GetCardByName(ctx context.Context, lower string) (LoreCard, error)
+	DeleteCard(ctx context.Context, id int64) error
+	DeleteCardByName(ctx context.Context, name string) error
+	GetCardByName(ctx context.Context, name string) (LoreCard, error)
 	ListCards(ctx context.Context) ([]LoreCard, error)
 	ListCardsByType(ctx context.Context, type_ string) ([]LoreCard, error)
 	SearchCardsByName(ctx context.Context, dollar_1 *string) ([]SearchCardsByNameRow, error)

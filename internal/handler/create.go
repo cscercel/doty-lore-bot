@@ -2,31 +2,38 @@ package handler
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
 	"log"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/jackc/pgx/v5/pgconn"
 
-	"github.com/cscercel/doty-lore-bot/internal/db"
+	"github.com/cscercel/doty-lore-bot/internal/database"
 )
+
+// isUniqueConstraintErr detects a SQLite/Turso UNIQUE constraint violation.
+func isUniqueConstraintErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "UNIQUE constraint failed") ||
+		strings.Contains(msg, "SQLITE_CONSTRAINT")
+}
 
 func HandleCreateStart(
 	s *discordgo.Session,
 	i *discordgo.InteractionCreate,
 	opts []*discordgo.ApplicationCommandInteractionDataOption,
-	q *db.Queries,
+	q *database.Queries,
 ) {
 	optMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption)
 	for _, o := range opts {
 		optMap[o.Name] = o
 	}
-
 	name := optMap["name"].StringValue()
 	cardType := optMap["type"].StringValue()
 	customID := "lore_create_modal:" + cardType + ":" + name
-
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseModal,
 		Data: &discordgo.InteractionResponseData{
@@ -71,7 +78,7 @@ func HandleCreateStart(
 	}
 }
 
-func HandleCreateSubmit(s *discordgo.Session, i *discordgo.InteractionCreate, q *db.Queries) {
+func HandleCreateSubmit(s *discordgo.Session, i *discordgo.InteractionCreate, q *database.Queries) {
 	data := i.ModalSubmitData()
 	parts := strings.SplitN(data.CustomID, ":", 3)
 	if len(parts) != 3 {
@@ -79,7 +86,6 @@ func HandleCreateSubmit(s *discordgo.Session, i *discordgo.InteractionCreate, q 
 		return
 	}
 	cardType, name := parts[1], parts[2]
-
 	var summary string
 	var body *string
 	var tags []string
@@ -114,16 +120,27 @@ func HandleCreateSubmit(s *discordgo.Session, i *discordgo.InteractionCreate, q 
 		}
 	}
 
-	card, err := q.CreateCard(context.Background(), db.CreateCardParams{
+	// Handle tags as array
+	var tagsJSON *string
+	if len(tags) > 0 {
+		b, err := json.Marshal(tags)
+		if err != nil {
+			log.Printf("tags marshal error: %v", err)
+		} else {
+			s := string(b)
+			tagsJSON = &s
+		}
+	}
+
+	card, err := q.CreateCard(context.Background(), database.CreateCardParams{
 		Name:    name,
 		Type:    cardType,
 		Summary: summary,
 		Body:    body,
-		Tags:    tags,
+		Tags:    tagsJSON,
 	})
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		if isUniqueConstraintErr(err) {
 			respond(s, i, "A card named \""+name+"\" already exists.")
 			return
 		}
@@ -132,13 +149,11 @@ func HandleCreateSubmit(s *discordgo.Session, i *discordgo.InteractionCreate, q 
 		return
 	}
 	log.Printf("card created: id=%d name=%q type=%q by=%s", card.ID, card.Name, card.Type, i.Member.User.Username)
-
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Content: "**" + card.Name + "** created. Reply here with an image within 60 seconds to add a portrait, or it'll be skipped.",
 		},
 	})
-
 	awaitImageReply(s, i.ChannelID, i.Member.User.ID, card.ID, q)
 }

@@ -10,22 +10,22 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
-	"github.com/cscercel/doty-lore-bot/internal/db"
+	"github.com/cscercel/doty-lore-bot/internal/database"
 )
 
 func HandleList(
-	s *discordgo.Session, 
-	i *discordgo.InteractionCreate, 
-	opts []*discordgo.ApplicationCommandInteractionDataOption, q *db.Queries,
+	s *discordgo.Session,
+	i *discordgo.InteractionCreate,
+	opts []*discordgo.ApplicationCommandInteractionDataOption, q *database.Queries,
 ) {
-var typeFilter string
+	var typeFilter string
 	for _, o := range opts {
 		if o.Name == "type" {
 			typeFilter = o.StringValue()
 		}
 	}
 
-	var cards []db.LoreCard
+	var cards []database.LoreCard
 	var err error
 	title := "All Lore Cards"
 

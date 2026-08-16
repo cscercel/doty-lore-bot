@@ -3,7 +3,7 @@
 //   sqlc v1.30.0
 // source: cards.sql
 
-package db
+package database
 
 import (
 	"context"
@@ -11,21 +11,21 @@ import (
 
 const createCard = `-- name: CreateCard :one
 INSERT INTO lore_cards (name, type, summary, body, image_url, tags)
-VALUES ($1, $2, $3, $4, $5, $6)
+VALUES (?, ?, ?, ?, ?, ?)
 RETURNING id, name, type, summary, body, image_url, tags, created_at, updated_at
 `
 
 type CreateCardParams struct {
-	Name     string   `json:"name"`
-	Type     string   `json:"type"`
-	Summary  string   `json:"summary"`
-	Body     *string  `json:"body"`
-	ImageUrl *string  `json:"image_url"`
-	Tags     []string `json:"tags"`
+	Name     string  `json:"name"`
+	Type     string  `json:"type"`
+	Summary  string  `json:"summary"`
+	Body     *string `json:"body"`
+	ImageUrl *string `json:"image_url"`
+	Tags     *string `json:"tags"`
 }
 
 func (q *Queries) CreateCard(ctx context.Context, arg CreateCardParams) (LoreCard, error) {
-	row := q.db.QueryRow(ctx, createCard,
+	row := q.db.QueryRowContext(ctx, createCard,
 		arg.Name,
 		arg.Type,
 		arg.Summary,
@@ -50,32 +50,32 @@ func (q *Queries) CreateCard(ctx context.Context, arg CreateCardParams) (LoreCar
 
 const deleteCard = `-- name: DeleteCard :exec
 DELETE FROM lore_cards
-WHERE id = $1
+WHERE id = ?
 `
 
-func (q *Queries) DeleteCard(ctx context.Context, id int32) error {
-	_, err := q.db.Exec(ctx, deleteCard, id)
+func (q *Queries) DeleteCard(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteCard, id)
 	return err
 }
 
 const deleteCardByName = `-- name: DeleteCardByName :exec
 DELETE FROM lore_cards
-WHERE LOWER(name) = LOWER($1)
+WHERE name = ? collate nocase
 `
 
-func (q *Queries) DeleteCardByName(ctx context.Context, lower string) error {
-	_, err := q.db.Exec(ctx, deleteCardByName, lower)
+func (q *Queries) DeleteCardByName(ctx context.Context, name string) error {
+	_, err := q.db.ExecContext(ctx, deleteCardByName, name)
 	return err
 }
 
 const getCardByName = `-- name: GetCardByName :one
 SELECT id, name, type, summary, body, image_url, tags, created_at, updated_at 
 FROM lore_cards 
-WHERE LOWER(name) = LOWER($1)
+WHERE name = ? collate nocase
 `
 
-func (q *Queries) GetCardByName(ctx context.Context, lower string) (LoreCard, error) {
-	row := q.db.QueryRow(ctx, getCardByName, lower)
+func (q *Queries) GetCardByName(ctx context.Context, name string) (LoreCard, error) {
+	row := q.db.QueryRowContext(ctx, getCardByName, name)
 	var i LoreCard
 	err := row.Scan(
 		&i.ID,
@@ -98,7 +98,7 @@ ORDER BY name
 `
 
 func (q *Queries) ListCards(ctx context.Context) ([]LoreCard, error) {
-	rows, err := q.db.Query(ctx, listCards)
+	rows, err := q.db.QueryContext(ctx, listCards)
 	if err != nil {
 		return nil, err
 	}
@@ -120,6 +120,9 @@ func (q *Queries) ListCards(ctx context.Context) ([]LoreCard, error) {
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -130,12 +133,12 @@ func (q *Queries) ListCards(ctx context.Context) ([]LoreCard, error) {
 const listCardsByType = `-- name: ListCardsByType :many
 SELECT id, name, type, summary, body, image_url, tags, created_at, updated_at
 FROM lore_cards
-WHERE type = $1
+WHERE type = ?
 ORDER BY name
 `
 
 func (q *Queries) ListCardsByType(ctx context.Context, type_ string) ([]LoreCard, error) {
-	rows, err := q.db.Query(ctx, listCardsByType, type_)
+	rows, err := q.db.QueryContext(ctx, listCardsByType, type_)
 	if err != nil {
 		return nil, err
 	}
@@ -158,6 +161,9 @@ func (q *Queries) ListCardsByType(ctx context.Context, type_ string) ([]LoreCard
 		}
 		items = append(items, i)
 	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -167,19 +173,19 @@ func (q *Queries) ListCardsByType(ctx context.Context, type_ string) ([]LoreCard
 const searchCardsByName = `-- name: SearchCardsByName :many
 SELECT id, name, type
 FROM lore_cards
-WHERE name ILIKE $1 || '%'
+WHERE name LIKE ? || '%'
 ORDER BY name
 LIMIT 25
 `
 
 type SearchCardsByNameRow struct {
-	ID   int32  `json:"id"`
+	ID   int64  `json:"id"`
 	Name string `json:"name"`
 	Type string `json:"type"`
 }
 
 func (q *Queries) SearchCardsByName(ctx context.Context, dollar_1 *string) ([]SearchCardsByNameRow, error) {
-	rows, err := q.db.Query(ctx, searchCardsByName, dollar_1)
+	rows, err := q.db.QueryContext(ctx, searchCardsByName, dollar_1)
 	if err != nil {
 		return nil, err
 	}
@@ -192,6 +198,9 @@ func (q *Queries) SearchCardsByName(ctx context.Context, dollar_1 *string) ([]Se
 		}
 		items = append(items, i)
 	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -201,33 +210,33 @@ func (q *Queries) SearchCardsByName(ctx context.Context, dollar_1 *string) ([]Se
 const updateCard = `-- name: UpdateCard :one
 UPDATE lore_cards
 SET 
-    name = $2,
-    summary = $3,
-    body = $4,
-    tags = $5,
-    image_url = $6,
-    updated_at = NOW()
-WHERE id = $1
+    name = ?,
+    summary = ?,
+    body = ?,
+    tags = ?,
+    image_url = ?,
+    updated_at = datetime('now')
+WHERE id = ?
 RETURNING id, name, type, summary, body, image_url, tags, created_at, updated_at
 `
 
 type UpdateCardParams struct {
-	ID       int32    `json:"id"`
-	Name     string   `json:"name"`
-	Summary  string   `json:"summary"`
-	Body     *string  `json:"body"`
-	Tags     []string `json:"tags"`
-	ImageUrl *string  `json:"image_url"`
+	Name     string  `json:"name"`
+	Summary  string  `json:"summary"`
+	Body     *string `json:"body"`
+	Tags     *string `json:"tags"`
+	ImageUrl *string `json:"image_url"`
+	ID       int64   `json:"id"`
 }
 
 func (q *Queries) UpdateCard(ctx context.Context, arg UpdateCardParams) (LoreCard, error) {
-	row := q.db.QueryRow(ctx, updateCard,
-		arg.ID,
+	row := q.db.QueryRowContext(ctx, updateCard,
 		arg.Name,
 		arg.Summary,
 		arg.Body,
 		arg.Tags,
 		arg.ImageUrl,
+		arg.ID,
 	)
 	var i LoreCard
 	err := row.Scan(
@@ -247,19 +256,19 @@ func (q *Queries) UpdateCard(ctx context.Context, arg UpdateCardParams) (LoreCar
 const updateCardImage = `-- name: UpdateCardImage :one
 UPDATE lore_cards
 SET 
-    image_url = $2,
-    updated_at = NOW()
-WHERE id = $1
+    image_url = ?,
+    updated_at = datetime('now')
+WHERE id = ?
 RETURNING id, name, type, summary, body, image_url, tags, created_at, updated_at
 `
 
 type UpdateCardImageParams struct {
-	ID       int32   `json:"id"`
 	ImageUrl *string `json:"image_url"`
+	ID       int64   `json:"id"`
 }
 
 func (q *Queries) UpdateCardImage(ctx context.Context, arg UpdateCardImageParams) (LoreCard, error) {
-	row := q.db.QueryRow(ctx, updateCardImage, arg.ID, arg.ImageUrl)
+	row := q.db.QueryRowContext(ctx, updateCardImage, arg.ImageUrl, arg.ID)
 	var i LoreCard
 	err := row.Scan(
 		&i.ID,

@@ -1,12 +1,12 @@
 -- name: CreateCard :one
 INSERT INTO lore_cards (name, type, summary, body, image_url, tags)
-VALUES ($1, $2, $3, $4, $5, $6)
+VALUES (?, ?, ?, ?, ?, ?)
 RETURNING *;
 
 -- name: GetCardByName :one
 SELECT * 
 FROM lore_cards 
-WHERE LOWER(name) = LOWER($1);
+WHERE name = ? collate nocase;
 
 -- name: ListCards :many
 SELECT *
@@ -16,40 +16,40 @@ ORDER BY name;
 -- name: ListCardsByType :many
 SELECT *
 FROM lore_cards
-WHERE type = $1
+WHERE type = ?
 ORDER BY name;
 
 -- name: UpdateCard :one
 UPDATE lore_cards
 SET 
-    name = $2,
-    summary = $3,
-    body = $4,
-    tags = $5,
-    image_url = $6,
-    updated_at = NOW()
-WHERE id = $1
+    name = ?,
+    summary = ?,
+    body = ?,
+    tags = ?,
+    image_url = ?,
+    updated_at = datetime('now')
+WHERE id = ?
 RETURNING *;
 
 -- name: UpdateCardImage :one
 UPDATE lore_cards
 SET 
-    image_url = $2,
-    updated_at = NOW()
-WHERE id = $1
+    image_url = ?,
+    updated_at = datetime('now')
+WHERE id = ?
 RETURNING *;
 
 -- name: SearchCardsByName :many
 SELECT id, name, type
 FROM lore_cards
-WHERE name ILIKE $1 || '%'
+WHERE name LIKE ? || '%'
 ORDER BY name
 LIMIT 25;
 
 -- name: DeleteCard :exec
 DELETE FROM lore_cards
-WHERE id = $1;
+WHERE id = ?;
 
 -- name: DeleteCardByName :exec
 DELETE FROM lore_cards
-WHERE LOWER(name) = LOWER($1);
+WHERE name = ? collate nocase;

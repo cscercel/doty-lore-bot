@@ -2,26 +2,26 @@ package handler
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/jackc/pgx/v5"
 
-	"github.com/cscercel/doty-lore-bot/internal/db"
+	"github.com/cscercel/doty-lore-bot/internal/database"
 )
 
 func HandleDelete(
 	s *discordgo.Session,
 	i *discordgo.InteractionCreate,
 	opts []*discordgo.ApplicationCommandInteractionDataOption,
-	q *db.Queries,
+	q *database.Queries,
 ) {
 	name := opts[0].StringValue()
 
 	existing, err := q.GetCardByName(context.Background(), name)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) {
 			respond(s, i, "No card found named \""+name+"\".")
 			return
 		}

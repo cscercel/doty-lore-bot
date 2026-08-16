@@ -5,11 +5,11 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
-	"github.com/cscercel/doty-lore-bot/internal/db"
+	"github.com/cscercel/doty-lore-bot/internal/database"
 	"github.com/cscercel/doty-lore-bot/internal/handler"
 )
 
-func RegisterHandlers(s *discordgo.Session, q *db.Queries) {
+func RegisterHandlers(s *discordgo.Session, q *database.Queries) {
 	s.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		switch i.Type {
 		case discordgo.InteractionApplicationCommand:

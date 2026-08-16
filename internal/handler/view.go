@@ -2,19 +2,19 @@ package handler
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/jackc/pgx/v5"
 
-	"github.com/cscercel/doty-lore-bot/internal/db"
+	"github.com/cscercel/doty-lore-bot/internal/database"
 )
 
 func HandleViewAutocomplete(
 	s *discordgo.Session,
 	i *discordgo.InteractionCreate,
-	opts []*discordgo.ApplicationCommandInteractionDataOption, q *db.Queries,
+	opts []*discordgo.ApplicationCommandInteractionDataOption, q *database.Queries,
 ) {
 	var input string
 	for _, o := range opts {
@@ -49,9 +49,9 @@ func HandleViewAutocomplete(
 }
 
 func HandleView(
-	s *discordgo.Session, 
-	i *discordgo.InteractionCreate, 
-	opts []*discordgo.ApplicationCommandInteractionDataOption, q *db.Queries,
+	s *discordgo.Session,
+	i *discordgo.InteractionCreate,
+	opts []*discordgo.ApplicationCommandInteractionDataOption, q *database.Queries,
 ) {
 	var name string
 	for _, o := range opts {
@@ -62,7 +62,7 @@ func HandleView(
 
 	card, err := q.GetCardByName(context.Background(), name)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) {
 			respond(s, i, "No card found named \""+name+"\".")
 			return
 		}

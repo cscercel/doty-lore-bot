@@ -1,18 +1,17 @@
 package main
 
 import (
-	"context"
+	"database/sql"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
-	_ "github.com/lib/pq"
+	_ "github.com/tursodatabase/libsql-client-go/libsql"
 
 	"github.com/cscercel/doty-lore-bot/internal/config"
-	"github.com/cscercel/doty-lore-bot/internal/db"
-	"github.com/cscercel/doty-lore-bot/internal/repository"
+	"github.com/cscercel/doty-lore-bot/internal/database"
 	"github.com/cscercel/doty-lore-bot/internal/discord"
 )
 
@@ -23,17 +22,15 @@ func main() {
 		log.Fatalf("config error: %v:", err)
 	}
 
-	ctx := context.Background()
-
-	// Connect to Database
-	pool, err := repository.NewPool(ctx, cfg.DatabaseURL)
+	// Sync to Database
+	db, err := sql.Open("libsql", cfg.DatabaseURL)
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		log.Fatal(err)
 	}
-	defer pool.Close()
+	defer db.Close()
 
 	// Load queries
-	queries := db.New(pool)
+	queries := database.New(db)
 
 	// Connect bot to server
 	session, err := discordgo.New("Bot " + cfg.DiscordToken)

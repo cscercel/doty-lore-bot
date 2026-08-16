@@ -2,6 +2,8 @@ package handler
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -9,22 +11,21 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/jackc/pgx/v5"
 
-	"github.com/cscercel/doty-lore-bot/internal/db"
+	"github.com/cscercel/doty-lore-bot/internal/database"
 )
 
 func HandleEditStart(
 	s *discordgo.Session,
 	i *discordgo.InteractionCreate,
 	opts []*discordgo.ApplicationCommandInteractionDataOption,
-	q *db.Queries,
+	q *database.Queries,
 ) {
 	name := opts[0].StringValue()
 
 	existing, err := q.GetCardByName(context.Background(), name)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) {
 			respond(s, i, "No card found named \""+name+"\".")
 			return
 		}
@@ -38,8 +39,13 @@ func HandleEditStart(
 		bodyVal = *existing.Body
 	}
 	tagsVal := ""
-	if len(existing.Tags) > 0 {
-		tagsVal = strings.Join(existing.Tags, ", ")
+	if existing.Tags != nil && *existing.Tags != "" {
+		var tags []string
+		if err := json.Unmarshal([]byte(*existing.Tags), &tags); err != nil {
+			log.Printf("tags unmarshal error: %v", err)
+		} else {
+			tagsVal = strings.Join(tags, ", ")
+		}
 	}
 
 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -107,7 +113,7 @@ func HandleEditStart(
 	}
 }
 
-func HandleEditSubmit(s *discordgo.Session, i *discordgo.InteractionCreate, q *db.Queries) {
+func HandleEditSubmit(s *discordgo.Session, i *discordgo.InteractionCreate, q *database.Queries) {
 	data := i.ModalSubmitData()
 	parts := strings.SplitN(data.CustomID, ":", 2)
 	if len(parts) != 2 {
@@ -164,27 +170,38 @@ func HandleEditSubmit(s *discordgo.Session, i *discordgo.InteractionCreate, q *d
 	}
 
 	// If the name changed, make sure it's not already taken by another card.
-	if conflict, err := q.GetCardByName(context.Background(), newName); err == nil && conflict.ID != int32(id) {
+	if conflict, err := q.GetCardByName(context.Background(), newName); err == nil && conflict.ID != id {
 		respond(s, i, "A card named \""+newName+"\" already exists — pick a different name.")
 		return
-	} else if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+	} else if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		log.Printf("name conflict check error: %v", err)
 		respond(s, i, "Something went wrong checking that name.")
 		return
 	}
 
-	params := db.UpdateCardParams{
-		ID:      int32(id),
+	// store as array
+	var tagsJSON *string
+	if len(tags) > 0 {
+		b, err := json.Marshal(tags)
+		if err != nil {
+			log.Printf("tags marshal error: %v", err)
+		} else {
+			t := string(b)
+			tagsJSON = &t
+		}
+	}
+
+	params := database.UpdateCardParams{
+		ID:      id,
 		Name:    newName,
 		Summary: summary,
 		Body:    body,
-		Tags:    tags,
+		Tags:    tagsJSON,
 	}
 
 	if imageFlag == "delete" {
 		params.ImageUrl = nil // clears the image
 	}
-	// for "keep" and "edit" we leave ImageUrl untouched here — see note below
 
 	updated, err := q.UpdateCard(context.Background(), params)
 	if err != nil {
