@@ -1,6 +1,5 @@
-.venv/
 .env
 *.log
 *.db
-bin/
 dist/
+node_modules/

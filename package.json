@@ -1,0 +1,33 @@
+{
+    "name": "doty-lore-bot",
+    "version": "2.0.0",
+    "description": "A Discord Bot for Logging World Building Related Events in a DnD Campaign",
+    "main": "index.js",
+    "type": "commonjs",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "build": "npx tsc",
+        "start": "node dist/index.js",
+        "dev": "npx tsc && node dist/index.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/cscercel/doty-lore-bot.git"
+    },
+    "keywords": [],
+    "bugs": {
+        "url": "https://github.com/cscercel/doty-lore-bot/issues"
+    },
+    "homepage": "https://github.com/cscercel/doty-lore-bot#readme",
+    "devDependencies": {
+        "@types/node": "^22.20.2",
+        "drizzle-kit": "^1.0.0-rc.4",
+        "tsx": "^4.23.13",
+        "typescript": "^7.0.2"
+    },
+    "dependencies": {
+        "@libsql/client": "^0.18.0",
+        "dotenv": "^17.4.2",
+        "drizzle-orm": "^1.0.0-rc.4"
+    }
+}
