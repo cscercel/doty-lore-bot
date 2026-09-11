@@ -5,10 +5,12 @@
     "main": "index.js",
     "type": "commonjs",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
-        "build": "npx tsc",
+        "test": "vitest run",
+        "typecheck": "tsc --noEmit",
+        "lint": "vitest run",
+        "build": "tsc",
         "start": "node dist/index.js",
-        "dev": "npx tsc && node dist/index.js"
+        "dev": "tsc && node dist/index.js"
     },
     "repository": {
         "type": "git",
@@ -22,8 +24,11 @@
     "devDependencies": {
         "@types/node": "^22.20.2",
         "drizzle-kit": "^1.0.0-rc.4",
+        "oxlint": "^1.82.0",
+        "oxlint-tsgolint": "^7.0.2001",
         "tsx": "^4.23.13",
-        "typescript": "^7.0.2"
+        "typescript": "^7.0.2",
+        "vitest": "^5.0.0"
     },
     "dependencies": {
         "@libsql/client": "^0.18.0",

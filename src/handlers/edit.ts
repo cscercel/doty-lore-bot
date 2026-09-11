@@ -11,7 +11,7 @@ import {
 import { cardTypes } from "../commands";
 import { getCardByName, updateCard } from "../db/queries/cards";
 import { Card } from "../db/schema";
-import { isUniqueConstraintErr } from "./create";
+import { isUniqueConstraintErr } from "./utils";
 
 
 export async function handleEditStart(interaction: ChatInputCommandInteraction) {

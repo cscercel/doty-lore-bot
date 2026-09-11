@@ -1,15 +1,6 @@
 import { ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
 import { listCards, listCardsByType } from "../db/queries/cards";
-
-
-function toTitleCase(str: string): string {
-    return str
-        .toLowerCase()
-        .split(" ")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ");
-}
-
+import { toTitleCase } from "./utils";
 
 export async function handleList(interaction: ChatInputCommandInteraction) {
     const typeFilter = interaction.options.getString("type") ?? "";
