@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0] - 2026.09.11
+
+### Added
+- Modals now include `type` field
+- Modals now include option to drop files instead of asking for a reply with image
+
+### Changed
+- Rewritten in TypeScript using discordjs since discordgo was missing latest features from Discord API
+
+### Fixed
+
 ## [1.2.0] - 2026.08.16
 
 ### Added

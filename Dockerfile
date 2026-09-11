@@ -1,18 +1,32 @@
-# Build stage
-FROM golang:1.26-alpine AS builder
-
+FROM node:22-alpine AS builder
+ 
 WORKDIR /app
-
-COPY go.mod go.sum ./
-RUN go mod download
-
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o /bot ./cmd/bot
-
-# Final stage
-FROM scratch
-
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=builder /bot /bot
-
-ENTRYPOINT ["/bot"]
+ 
+COPY package.json package-lock.json ./
+RUN npm ci
+ 
+COPY tsconfig.json ./
+COPY src ./src
+ 
+RUN npm run build
+ 
+ 
+FROM node:22-alpine AS production-deps
+ 
+WORKDIR /app
+ 
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+ 
+ 
+FROM node:22-alpine
+ 
+WORKDIR /app
+ 
+ENV NODE_ENV=production
+ 
+COPY --from=production-deps /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY package.json ./
+ 
+CMD ["node", "dist/index.js"]

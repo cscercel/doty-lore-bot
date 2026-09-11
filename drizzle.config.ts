@@ -3,7 +3,7 @@ import { config } from "./src/config";
 
 
 export default defineConfig({
-    out: './drizzle',
+    out: './src/db/migrations',
     schema: './src/db/schema.ts',
     dialect: 'turso',
     dbCredentials: {

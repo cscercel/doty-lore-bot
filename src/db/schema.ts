@@ -2,13 +2,6 @@ import { sqliteTable, uniqueIndex, index, integer, text, customType } from "driz
 import { sql } from "drizzle-orm"
 
 
-export const gooseDbVersion = sqliteTable("goose_db_version", {
-    id: integer().primaryKey({ autoIncrement: true }),
-    versionId: integer("version_id").notNull(),
-    isApplied: integer("is_applied").notNull(),
-    tstamp: customType({ dataType: () => 'TIMESTAMP' })().default("datetime('now')"),
-});
-
 export const loreCards = sqliteTable("lore_cards", {
     id: integer().primaryKey({ autoIncrement: true }),
     name: text().notNull(),

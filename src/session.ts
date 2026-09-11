@@ -1,6 +1,9 @@
 import { Client, Events, Interaction } from "discord.js";
 import { handleCreateStart, handleCreateSubmit } from "./handlers/create";
 import { handleDelete } from "./handlers/delete";
+import { handleEditStart, handleEditSubmit } from "./handlers/edit";
+import { handleList } from "./handlers/list";
+import { handleViewAutoComplete, handleView } from "./handlers/view";
 
 
 export function registerHandlers(client: Client) {
@@ -20,7 +23,7 @@ export function registerHandlers(client: Client) {
                     await handleView(interaction);
                     break;
                 case "list":
-                    await handleView(interaction);
+                    await handleList(interaction);
                     break;
                 case "edit":
                     await handleEditStart(interaction);

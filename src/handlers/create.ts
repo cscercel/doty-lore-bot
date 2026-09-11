@@ -13,7 +13,7 @@ import { NewCard } from "../db/schema";
 import { createCard } from "../db/queries/cards";
 
 
-function isUniqueConstraintErr(err: unknown): boolean {
+export function isUniqueConstraintErr(err: unknown): boolean {
     if (!err) return false;
     const msg = err instanceof Error ? err.message : String(err);
     return msg.includes("UNIQUE constraint failed") || msg.includes("SQLITE_CONSTRAINT");
@@ -109,9 +109,18 @@ export async function handleCreateSubmit(interaction: ModalSubmitInteraction) {
     const tagsJSON = tags.length > 0 ? JSON.stringify(tags) : null;
 
     const uploadedFiles = interaction.fields.getUploadedFiles("image");
-    const imageUrl = uploadedFiles && uploadedFiles.size > 0
-        ? [...uploadedFiles.values()][0].url
-        : null;
+    const files = uploadedFiles ? [...uploadedFiles.values()] : [];
+
+    // Check if file is an image (will be added to FileUploadBuilder in a future release)
+    const invalid = files.some(f => !f.contentType?.startsWith("image/"));
+    if (invalid) {
+        return interaction.reply({
+            content: "Please only upload image files.",
+            ephemeral: true,
+        });
+    }
+
+    const imageUrl = files.length > 0 ? files[0].url : null;
 
     const params: NewCard = {
         name: name,

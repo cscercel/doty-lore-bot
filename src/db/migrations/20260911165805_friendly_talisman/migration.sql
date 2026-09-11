@@ -1,0 +1,1 @@
+DROP TABLE `goose_db_version`;
