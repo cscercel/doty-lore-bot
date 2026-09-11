@@ -1,7 +1,12 @@
 import { Client, Events, Interaction } from "discord.js";
 import { handleCreateStart, handleCreateSubmit } from "./handlers/create";
 import { handleDelete } from "./handlers/delete";
-import { handleEditStart, handleEditSubmit } from "./handlers/edit";
+import {
+    handleEditStart,
+    handleEditSubmit,
+    handleEditImageOption,
+    handleEditImageModalSubmit,
+} from "./handlers/edit";
 import { handleList } from "./handlers/list";
 import { handleViewAutoComplete, handleView } from "./handlers/view";
 
@@ -48,6 +53,14 @@ export function registerHandlers(client: Client) {
             return;
         }
 
+        // String select menus
+        if (interaction.isStringSelectMenu()) {
+            if (interaction.customId.startsWith("lore_edit_image:")) {
+                await handleEditImageOption(interaction);
+            }
+            return;
+        }
+
         // Modal submissions
         if (interaction.isModalSubmit()) {
             const customId = interaction.customId;
@@ -56,6 +69,8 @@ export function registerHandlers(client: Client) {
                 await handleCreateSubmit(interaction);
             } else if (customId.startsWith("lore_edit_modal:")) {
                 await handleEditSubmit(interaction);
+            } else if (customId.startsWith("lore_edit_image_modal:")) {
+                await handleEditImageModalSubmit(interaction);
             }
             return;
         }

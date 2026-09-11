@@ -7,17 +7,12 @@ import {
     StringSelectMenuBuilder,
     TextInputBuilder,
     TextInputStyle,
+    MessageFlags,
 } from "discord.js";
 import { cardTypes } from "../commands";
 import { NewCard } from "../db/schema";
 import { createCard } from "../db/queries/cards";
-
-
-export function isUniqueConstraintErr(err: unknown): boolean {
-    if (!err) return false;
-    const msg = err instanceof Error ? err.message : String(err);
-    return msg.includes("UNIQUE constraint failed") || msg.includes("SQLITE_CONSTRAINT");
-}
+import { isUniqueConstraintErr } from "./utils";
 
 
 export async function handleCreateStart(interaction: ChatInputCommandInteraction) {
@@ -90,7 +85,7 @@ export async function handleCreateSubmit(interaction: ModalSubmitInteraction) {
     if (parts.length !== 2) {
         await interaction.reply({
             content: "Something went wrong = please try creating the card again.",
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
         return;
     }
@@ -116,7 +111,7 @@ export async function handleCreateSubmit(interaction: ModalSubmitInteraction) {
     if (invalid) {
         return interaction.reply({
             content: "Please only upload image files.",
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
     }
 
@@ -138,14 +133,14 @@ export async function handleCreateSubmit(interaction: ModalSubmitInteraction) {
         if (isUniqueConstraintErr(err)) {
             await interaction.reply({
                 content: `A card named "${name}" already exists.`,
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
         console.error("create card error:", err);
         await interaction.reply({
             content: "Something went wrong creating the card.",
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
         return;
     }

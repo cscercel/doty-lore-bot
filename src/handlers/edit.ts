@@ -1,17 +1,20 @@
 import {
     ChatInputCommandInteraction,
-    FileUploadBuilder,
     LabelBuilder,
     ModalBuilder,
     ModalSubmitInteraction,
     StringSelectMenuBuilder,
     TextInputBuilder,
     TextInputStyle,
+    MessageFlags,
+    ActionRowBuilder,
+    FileUploadBuilder,
+    StringSelectMenuInteraction,
 } from "discord.js";
 import { cardTypes } from "../commands";
 import { getCardByName, updateCard } from "../db/queries/cards";
 import { Card } from "../db/schema";
-import { isUniqueConstraintErr } from "./create";
+import { isUniqueConstraintErr } from "./utils";
 
 
 export async function handleEditStart(interaction: ChatInputCommandInteraction) {
@@ -21,7 +24,7 @@ export async function handleEditStart(interaction: ChatInputCommandInteraction) 
     if (!existing) {
         await interaction.reply({
             content: `No card found named "${name}".`,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
         return;
     }
@@ -42,7 +45,7 @@ export async function handleEditStart(interaction: ChatInputCommandInteraction) 
 
     const typeSelect = new StringSelectMenuBuilder()
         .setCustomId("type")
-        .setPlaceholder("Select card type...")
+        .setPlaceholder(existing.type)
         .setRequired(true)
         .addOptions(...cardTypes);
     const typeLabel = new LabelBuilder()
@@ -52,6 +55,7 @@ export async function handleEditStart(interaction: ChatInputCommandInteraction) 
     const summaryInput = new TextInputBuilder()
         .setCustomId("summary")
         .setStyle(TextInputStyle.Short)
+        .setValue(existing.summary)
         .setRequired(true)
         .setMaxLength(200);
     const summaryLabel = new LabelBuilder()
@@ -61,6 +65,7 @@ export async function handleEditStart(interaction: ChatInputCommandInteraction) 
     const bodyInput = new TextInputBuilder()
         .setCustomId("body")
         .setStyle(TextInputStyle.Paragraph)
+        .setValue(existing.body || "")
         .setRequired(true)
         .setMaxLength(4000);
     const bodyLabel = new LabelBuilder()
@@ -70,33 +75,12 @@ export async function handleEditStart(interaction: ChatInputCommandInteraction) 
     const tagsInput = new TextInputBuilder()
         .setCustomId("tags")
         .setStyle(TextInputStyle.Short)
+        .setValue(existing.tags || "")
         .setRequired(false)
         .setMaxLength(200);
     const tagsLabel = new LabelBuilder()
         .setLabel("Tags (comma-separated)")
         .setTextInputComponent(tagsInput);
-
-    const imageOptionSelect = new StringSelectMenuBuilder()
-        .setCustomId("image_option")
-        .setPlaceholder("Select an option...")
-        .setRequired(true)
-        .addOptions(
-            { label: "Keep existing image", value: "keep", default: true },
-            { label: "Delete image", value: "delete" },
-            { label: "Change image", value: "change" },
-        );
-    const imageOptionLabel = new LabelBuilder()
-        .setLabel("image")
-        .setStringSelectMenuComponent(imageOptionSelect);
-
-    const imageUpload = new FileUploadBuilder()
-        .setCustomId("image")
-        .setMinValues(0)
-        .setMaxValues(1)
-        .setRequired(false);
-    const imageUploadLabel = new LabelBuilder()
-        .setLabel("New image (only used if \"Change image\" is selected)")
-        .setFileUploadComponent(imageUpload);
 
     modal.addLabelComponents(
         nameLabel,
@@ -104,8 +88,6 @@ export async function handleEditStart(interaction: ChatInputCommandInteraction) 
         summaryLabel,
         bodyLabel,
         tagsLabel,
-        imageOptionLabel,
-        imageUploadLabel,
     );
 
     await interaction.showModal(modal);
@@ -116,7 +98,7 @@ export async function handleEditSubmit(interaction: ModalSubmitInteraction) {
     if (parts.length !== 2) {
         await interaction.reply({
             content: "Something went wrong - please try editing again.",
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
         return;
     }
@@ -125,13 +107,13 @@ export async function handleEditSubmit(interaction: ModalSubmitInteraction) {
     if (Number.isNaN(id)) {
         await interaction.reply({
             content: "Something went wrong - please try editing again.",
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
         return;
     }
 
     const newName = interaction.fields.getTextInputValue("name").trim();
-    const type = interaction.fields.getTextInputValue("type");
+    const type = interaction.fields.getStringSelectValues("type")[0];
     const summary = interaction.fields.getTextInputValue("summary");
 
     const rawBody = interaction.fields.getTextInputValue("body");
@@ -143,48 +125,11 @@ export async function handleEditSubmit(interaction: ModalSubmitInteraction) {
         : [];
     const tagsJSON = tags.length > 0 ? JSON.stringify(tags) : null;
 
-    const imageOption = interaction.fields.getStringSelectValues("image_option")[0];
-    if (!["keep", "delete", "change"].includes(imageOption)) {
-        await interaction.reply({
-            content: "Image option must be keep, delete or change",
-            ephemeral: true,
-        });
-        return;
-    }
-
-    let imageUrl: string | null | undefined;
-
-    if (imageOption === "delete") {
-        imageUrl = null;
-    } else if (imageOption === "change") {
-        const uploadedFiles = interaction.fields.getUploadedFiles("image");
-        const files = uploadedFiles ? [...uploadedFiles.values()] : [];
-
-        if (files.length === 0) {
-            await interaction.reply({
-                content: "You selected \"Change image\" but didn't upload a file — please try again.",
-                ephemeral: true,
-            });
-            return;
-        }
-
-        const invalid = files.some((f) => !f.contentType?.startsWith("image/"));
-        if (invalid) {
-            await interaction.reply({
-                content: "Please only upload image files.",
-                ephemeral: true,
-            });
-            return;
-        }
-
-        imageUrl = files[0].url;
-    }
-
     const conflict = await getCardByName(newName);
     if (conflict && conflict.id !== id) {
         await interaction.reply({
             content: `A card named "${newName} already exists - pick a different name`,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
         return;
     }
@@ -195,7 +140,6 @@ export async function handleEditSubmit(interaction: ModalSubmitInteraction) {
         summary: summary,
         body: body,
         tags: tagsJSON,
-        ...(imageUrl !== undefined ? { imageUrl } : {}),
     };
 
     let updated
@@ -205,14 +149,14 @@ export async function handleEditSubmit(interaction: ModalSubmitInteraction) {
         if (isUniqueConstraintErr(err)) {
             await interaction.reply({
                 content: `A card named "${newName}" already exists.`,
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
         console.error("update card error:", err);
         await interaction.reply({
             content: "Something went wrong updating card.",
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
         return;
     }
@@ -220,6 +164,142 @@ export async function handleEditSubmit(interaction: ModalSubmitInteraction) {
     console.log(`card edited: id=${updated.id} name=${updated.name} by=${interaction.user.username}`);
 
     await interaction.reply({
-        content: `**${updated.name}** updated.`
+        content: `**${updated.name}** updated. Want to change the image too?`,
+        flags: MessageFlags.Ephemeral,
+        components: [
+            new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+                new StringSelectMenuBuilder()
+                    .setCustomId(`lore_edit_image:${updated.id}`)
+                    .setPlaceholder("Image options...")
+                    .addOptions(
+                        { label: "Keep existing image", value: "keep" },
+                        { label: "Delete image", value: "delete" },
+                        { label: "Change image", value: "change" },
+                    )
+            ),
+        ],
+    });
+}
+
+
+export async function handleEditImageOption(interaction: StringSelectMenuInteraction) {
+    const parts = interaction.customId.split(":");
+    if (parts.length !== 2) {
+        await interaction.update({
+            content: "Something went wrong - please try editing again.",
+            components: [],
+        });
+        return;
+    }
+
+    const id = Number(parts[1]);
+    if (Number.isNaN(id)) {
+        await interaction.update({
+            content: "Something went wrong - please try editing again.",
+            components: [],
+        });
+        return;
+    }
+
+    const choice = interaction.values[0];
+
+    if (choice === "keep") {
+        await interaction.update({
+            content: "Image unchanged.",
+            components: [],
+        });
+        return;
+    }
+
+    if (choice === "delete") {
+        try {
+            await updateCard(id, { imageUrl: null });
+        } catch (err) {
+            console.error("delete image error:", err);
+            await interaction.update({
+                content: "Something went wrong removing the image.",
+                components: [],
+            });
+            return;
+        }
+        await interaction.update({
+            content: "Image removed.",
+            components: [],
+        });
+        return;
+    }
+
+    // choice === "change" -> show a follow-up modal with the file upload
+    const modal = new ModalBuilder()
+        .setCustomId(`lore_edit_image_modal:${id}`)
+        .setTitle("Change image");
+
+    const imageUpload = new FileUploadBuilder()
+        .setCustomId("image")
+        .setMinValues(1)
+        .setMaxValues(1)
+        .setRequired(true);
+    const imageUploadLabel = new LabelBuilder()
+        .setLabel("New image")
+        .setFileUploadComponent(imageUpload);
+
+    modal.addLabelComponents(imageUploadLabel);
+
+    await interaction.showModal(modal);
+}
+
+export async function handleEditImageModalSubmit(interaction: ModalSubmitInteraction) {
+    const parts = interaction.customId.split(":");
+    if (parts.length !== 2) {
+        await interaction.reply({
+            content: "Something went wrong - please try again.",
+            flags: MessageFlags.Ephemeral,
+        });
+        return;
+    }
+
+    const id = Number(parts[1]);
+    if (Number.isNaN(id)) {
+        await interaction.reply({
+            content: "Something went wrong - please try again.",
+            flags: MessageFlags.Ephemeral,
+        });
+        return;
+    }
+
+    const uploadedFiles = interaction.fields.getUploadedFiles("image");
+    const files = uploadedFiles ? [...uploadedFiles.values()] : [];
+
+    if (files.length === 0) {
+        await interaction.reply({
+            content: "No file was uploaded — please try again.",
+            flags: MessageFlags.Ephemeral,
+        });
+        return;
+    }
+
+    const invalid = files.some((f) => !f.contentType?.startsWith("image/"));
+    if (invalid) {
+        await interaction.reply({
+            content: "Please only upload image files.",
+            flags: MessageFlags.Ephemeral,
+        });
+        return;
+    }
+
+    try {
+        await updateCard(id, { imageUrl: files[0].url });
+    } catch (err) {
+        console.error("update image error:", err);
+        await interaction.reply({
+            content: "Something went wrong updating the image.",
+            flags: MessageFlags.Ephemeral,
+        });
+        return;
+    }
+
+    await interaction.reply({
+        content: "Image updated.",
+        flags: MessageFlags.Ephemeral,
     });
 }

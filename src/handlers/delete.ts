@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction } from "discord.js";
+import { ChatInputCommandInteraction, MessageFlags } from "discord.js";
 import { deleteCard, getCardByName } from "../db/queries/cards";
 
 
@@ -12,7 +12,7 @@ export async function handleDelete(interaction: ChatInputCommandInteraction) {
         console.error("delete lookup error:", err);
         await interaction.reply({
             content: "Something went wrong looking card up.",
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
         return;
     }
@@ -20,7 +20,7 @@ export async function handleDelete(interaction: ChatInputCommandInteraction) {
     if (!existing) {
         await interaction.reply({
             content: `No card found named "${name}".`,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
         return;
     }
@@ -31,7 +31,7 @@ export async function handleDelete(interaction: ChatInputCommandInteraction) {
         console.error("delete card error:", err);
         await interaction.reply({
             content: "Something went wrong deleting card.",
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
         return;
     }
