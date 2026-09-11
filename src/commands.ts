@@ -30,13 +30,6 @@ const data = new SlashCommandBuilder()
                     .setDescription("Card name")
                     .setRequired(true)
             )
-            .addStringOption((option) =>
-                option
-                    .setName("type")
-                    .setDescription("Card type")
-                    .setRequired(true)
-                    .addChoices(...cardTypes)
-            )
     )
     .addSubcommand((subcommand) =>
         subcommand

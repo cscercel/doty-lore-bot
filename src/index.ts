@@ -1,6 +1,7 @@
 import { Client, Events, GatewayIntentBits } from "discord.js";
 import { config } from "./config";
 import { registerHandlers } from "./session";
+import { registerCommands } from "./commands";
 import { db } from "./db";
 
 
@@ -8,8 +9,10 @@ import { db } from "./db";
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 registerHandlers(client);
 
-client.once(Events.ClientReady, (readyClient) => {
+client.once(Events.ClientReady, async (readyClient) => {
     console.log(`Ready! Logged in as ${readyClient.user.tag}`);
+    await registerCommands(readyClient.user.id, config.guild_id);
+    console.log("Commands registered.");
 });
 
 client.on(Events.Error, (err) => {

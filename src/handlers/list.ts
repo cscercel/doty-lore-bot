@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
+import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from "discord.js";
 import { listCards, listCardsByType } from "../db/queries/cards";
 import { toTitleCase } from "./utils";
 
@@ -19,7 +19,7 @@ export async function handleList(interaction: ChatInputCommandInteraction) {
         console.error("list cards error:", err);
         await interaction.reply({
             content: "Something went wrong listing cards.",
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
         return;
     }
@@ -27,7 +27,7 @@ export async function handleList(interaction: ChatInputCommandInteraction) {
     if (cards.length === 0) {
         await interaction.reply({
             content: "No cards found.",
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
         return;
     }
@@ -48,14 +48,14 @@ export async function handleList(interaction: ChatInputCommandInteraction) {
         console.error("dm send error:", err);
         await interaction.reply({
             content: "Couldn't send you a DM — check your privacy settings allow DMs from server members.",
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
         return;
     }
 
     await interaction.reply({
         content: "Sent the card list to your DMs.",
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
     });
 
     console.log(`cards listed via dm: type=${typeFilter || "none"} count=${cards.length} by=${interaction.user.username}`,

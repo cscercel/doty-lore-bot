@@ -69,7 +69,7 @@ export async function searchCardsByName(searchTerm: string) {
     const rows = await db
         .select()
         .from(loreCards)
-        .where(like(loreCards.name, `${searchTerm}`))
+        .where(like(loreCards.name, `%${searchTerm}%`))
         .orderBy(loreCards.name)
         .limit(25);
 

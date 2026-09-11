@@ -7,6 +7,7 @@ import {
     StringSelectMenuBuilder,
     TextInputBuilder,
     TextInputStyle,
+    MessageFlags,
 } from "discord.js";
 import { cardTypes } from "../commands";
 import { NewCard } from "../db/schema";
@@ -84,7 +85,7 @@ export async function handleCreateSubmit(interaction: ModalSubmitInteraction) {
     if (parts.length !== 2) {
         await interaction.reply({
             content: "Something went wrong = please try creating the card again.",
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
         return;
     }
@@ -110,7 +111,7 @@ export async function handleCreateSubmit(interaction: ModalSubmitInteraction) {
     if (invalid) {
         return interaction.reply({
             content: "Please only upload image files.",
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
     }
 
@@ -132,14 +133,14 @@ export async function handleCreateSubmit(interaction: ModalSubmitInteraction) {
         if (isUniqueConstraintErr(err)) {
             await interaction.reply({
                 content: `A card named "${name}" already exists.`,
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
         console.error("create card error:", err);
         await interaction.reply({
             content: "Something went wrong creating the card.",
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
         return;
     }

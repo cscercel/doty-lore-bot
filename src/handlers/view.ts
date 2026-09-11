@@ -1,4 +1,9 @@
-import { AutocompleteInteraction, ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
+import {
+    AutocompleteInteraction,
+    ChatInputCommandInteraction,
+    EmbedBuilder,
+    MessageFlags,
+} from "discord.js";
 import { searchCardsByName, getCardByName } from "../db/queries/cards";
 
 
@@ -28,7 +33,7 @@ export async function handleView(interaction: ChatInputCommandInteraction) {
     if (!card) {
         await interaction.reply({
             content: `No card found named "${name}".`,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
         return;
     }
@@ -54,14 +59,14 @@ export async function handleView(interaction: ChatInputCommandInteraction) {
         console.error("dm send error:", err);
         await interaction.reply({
             content: "Couldn't send you a DM — check your privacy settings allow DMs from server members.",
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
         return;
     }
 
     await interaction.reply({
         content: `Sent "${card.name}" to your DMs.`,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
     });
 
     console.log(`card viewed via dm: name=${card.name} by=${interaction.user.username}`);
