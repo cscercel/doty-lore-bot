@@ -304,8 +304,18 @@ export async function handleEditImageModalSubmit(interaction: ModalSubmitInterac
         return;
     }
 
-    await interaction.reply({
-        content: "Image updated.",
-        flags: MessageFlags.Ephemeral,
-    });
+    // Remove the previous modal to avoid backtracking - thanks Kachow for QA testing
+    if (interaction.isFromMessage()) {
+        await interaction.deferUpdate();
+        await interaction.deferReply();
+        await interaction.followUp({
+            content: "Image updated.",
+            flags: MessageFlags.Ephemeral,
+        });
+    } else {
+        await interaction.reply({
+            content: "Image updated.",
+            flags: MessageFlags.Ephemeral,
+        });
+    }
 }
