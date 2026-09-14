@@ -43,11 +43,17 @@ export async function handleEditStart(interaction: ChatInputCommandInteraction) 
         .setLabel("Name")
         .setTextInputComponent(nameInput);
 
+    // Set default `type` to current type of card
+    const cardTypeChoices = cardTypes.map(item => ({
+        ...item,
+        default: item.value === existing.type
+    }));
+
     const typeSelect = new StringSelectMenuBuilder()
         .setCustomId("type")
         .setPlaceholder(existing.type)
         .setRequired(true)
-        .addOptions(...cardTypes);
+        .addOptions(...cardTypeChoices);
     const typeLabel = new LabelBuilder()
         .setLabel("Type")
         .setStringSelectMenuComponent(typeSelect);
@@ -298,8 +304,18 @@ export async function handleEditImageModalSubmit(interaction: ModalSubmitInterac
         return;
     }
 
-    await interaction.reply({
-        content: "Image updated.",
-        flags: MessageFlags.Ephemeral,
-    });
+    // Remove the previous modal to avoid backtracking - thanks Kachow for QA testing
+    if (interaction.isFromMessage()) {
+        await interaction.deferUpdate();
+        await interaction.deferReply();
+        await interaction.followUp({
+            content: "Image updated.",
+            flags: MessageFlags.Ephemeral,
+        });
+    } else {
+        await interaction.reply({
+            content: "Image updated.",
+            flags: MessageFlags.Ephemeral,
+        });
+    }
 }
