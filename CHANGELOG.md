@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.1.0] - 2026.09.14
+
+### Added
+
+### Changed
+- Edit modal for image will now dissapear after an option is selected (thanks Kachow for flagging this!)
+
+### Fixed
+- Fixed an issue where edit modal would not prefill `type` with existing value. (Thanks Kachow!)
+
 ## [2.0.0] - 2026.09.11
 
 ### Added
