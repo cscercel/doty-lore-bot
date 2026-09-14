@@ -43,11 +43,17 @@ export async function handleEditStart(interaction: ChatInputCommandInteraction) 
         .setLabel("Name")
         .setTextInputComponent(nameInput);
 
+    // Set default `type` to current type of card
+    const cardTypeChoices = cardTypes.map(item => ({
+        ...item,
+        default: item.value === existing.type
+    }));
+
     const typeSelect = new StringSelectMenuBuilder()
         .setCustomId("type")
         .setPlaceholder(existing.type)
         .setRequired(true)
-        .addOptions(...cardTypes);
+        .addOptions(...cardTypeChoices);
     const typeLabel = new LabelBuilder()
         .setLabel("Type")
         .setStringSelectMenuComponent(typeSelect);
